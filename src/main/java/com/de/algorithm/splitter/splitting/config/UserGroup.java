@@ -10,7 +10,12 @@ import org.springframework.stereotype.Service;
 public class UserGroup {
 
   public List<String> groupMember = new ArrayList<>();
+
   public String groupId;
   public boolean stored = false;
+
+  public List<String> getGroupMember() {
+    return this.groupMember;
+  }
 
 }

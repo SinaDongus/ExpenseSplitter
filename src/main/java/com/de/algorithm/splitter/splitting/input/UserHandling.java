@@ -14,14 +14,17 @@ public class UserHandling {
   @Autowired
   private ApplicationEventPublisher applicationEventPublisher;
 
-  public String setupUserGroup(String shortId, List<String> participants) {
-    UserGroup usergroup = new UserGroup();
+  @Autowired
+  private UserGroup userGroup;
 
-    usergroup.setGroupId(shortId);
-    usergroup.setGroupMember(participants);
-    NewUserGroupEvent newUserGroup = new NewUserGroupEvent(this, usergroup);
+  public void setupUserGroup(String shortId, List<String> participants) {
+//    UserGroup usergroup = new UserGroup();
+
+    userGroup.setGroupId(shortId);
+    userGroup.setGroupMember(participants);
+    NewUserGroupEvent newUserGroup = new NewUserGroupEvent(this, userGroup);
     applicationEventPublisher.publishEvent(newUserGroup);
-    return usergroup.groupId;
+
   }
 
 }

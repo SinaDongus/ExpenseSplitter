@@ -3,6 +3,7 @@ package com.de.algorithm.splitter.splitting.input;
 import com.de.algorithm.splitter.splitting.SumUp;
 import com.de.algorithm.splitter.splitting.config.Expense;
 import com.de.algorithm.splitter.splitting.config.IncludedMembers;
+import com.de.algorithm.splitter.splitting.config.UserGroup;
 import com.de.algorithm.splitter.splitting.sqlite.SQLiteHandler;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -21,11 +22,13 @@ public class SplittingManager {
   @Autowired
   private SQLiteHandler sqLiteHandler;
 
+
   private List<String> officalMemberList = new ArrayList<>();
 
 
   public void trackExpense(String id, String name, String title, IncludedMembers member,
       double cash) {
+//    get usergroup by id
     List<String> expenseParticipants = new ArrayList<>();
     if (member.equals(IncludedMembers.ALL)) {
       expenseParticipants = this.officalMemberList;
