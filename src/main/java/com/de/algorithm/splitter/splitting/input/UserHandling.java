@@ -18,7 +18,6 @@ public class UserHandling {
   private UserGroup userGroup;
 
   public void setupUserGroup(String shortId, List<String> participants) {
-//    UserGroup usergroup = new UserGroup();
 
     userGroup.setGroupId(shortId);
     userGroup.setGroupMember(participants);

@@ -4,12 +4,14 @@ import com.de.algorithm.splitter.splitting.SumUp;
 import com.de.algorithm.splitter.splitting.config.Expense;
 import com.de.algorithm.splitter.splitting.config.IncludedMembers;
 import com.de.algorithm.splitter.splitting.config.UserGroup;
+import com.de.algorithm.splitter.splitting.events.NewUserGroupEvent;
 import com.de.algorithm.splitter.splitting.sqlite.SQLiteHandler;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -23,15 +25,32 @@ public class SplittingManager {
   private SQLiteHandler sqLiteHandler;
 
 
-  private List<String> officalMemberList = new ArrayList<>();
+//  private List<String> officalMemberList = new ArrayList<>();
+
+  @Autowired
+  private ApplicationEventPublisher applicationEventPublisher;
+
+  @Autowired
+  private UserGroup userGroup;
+
+  public void setupUserGroup(String shortId, List<String> participants) {
+    userGroup.setGroupId(shortId);
+    userGroup.setGroupMember(participants);
+    sqLiteHandler.addUserGroupToDatabase(userGroup);
+    NewUserGroupEvent newUserGroup = new NewUserGroupEvent(this, userGroup);
+    applicationEventPublisher.publishEvent(newUserGroup);
+
+  }
 
 
   public void trackExpense(String id, String name, String title, IncludedMembers member,
       double cash) {
 //    get usergroup by id
+    List<String> groupMember = sqLiteHandler.getUserGroup(id);
     List<String> expenseParticipants = new ArrayList<>();
     if (member.equals(IncludedMembers.ALL)) {
-      expenseParticipants = this.officalMemberList;
+//      expenseParticipants = this.officalMemberList;
+      expenseParticipants = groupMember;
     } else if (member.equals(IncludedMembers.JUST_ME)) {
       expenseParticipants.add(name);
     }
@@ -54,9 +73,9 @@ public class SplittingManager {
     return new Expense(name, title, expenseParticipants, cash);
   }
 
-  public void generateParticipantGroup(List<String> p) {
-    this.officalMemberList = p;
-  }
+//  public void generateParticipantGroup(List<String> p) {
+//    this.officalMemberList = p;
+//  }
 
   public void split(String id) {
     try {

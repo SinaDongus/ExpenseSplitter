@@ -2,9 +2,13 @@ package com.de.algorithm.splitter.splitting.sqlite;
 
 import com.de.algorithm.splitter.splitting.config.Expense;
 import com.de.algorithm.splitter.splitting.config.UserGroup;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +34,8 @@ public class SQLiteHandlerAssistant {
     return this.tableCreated;
   }
 
-  public void insertData(String groupId, Expense expense) {
-
+  public void insertExpenseData(String groupId, Expense expense) {
+    log.debug("Start inserting expense data for id '{}'", groupId);
     try {
       stmt = connector.getConnection().createStatement();
 
@@ -61,7 +65,7 @@ public class SQLiteHandlerAssistant {
       }
       String firstPartFinal = firstPart.substring(0, firstPart.length() - 1);
       firstPartFinal = firstPartFinal.concat(")");
-      log.info("first: {}", firstPartFinal);
+      log.info("first String is: {}", firstPartFinal);
       final int SHORT_ID_LENGTH = 8;
       String randomId = RandomStringUtils.randomAlphanumeric(SHORT_ID_LENGTH);
       String secondPart =
@@ -76,7 +80,7 @@ public class SQLiteHandlerAssistant {
 
       String secondPartFinal = secondPart.substring(0, secondPart.length() - 1);
       secondPartFinal = secondPartFinal.concat(");");
-      log.info("second: {}", secondPartFinal);
+      log.info("second string is : {}", secondPartFinal);
       String sqlStatement = firstPartFinal.concat(secondPartFinal);
       log.info("Final sql Statement: {}", sqlStatement);
 
@@ -88,12 +92,10 @@ public class SQLiteHandlerAssistant {
     } catch (SQLException e) {
       log.error("Inserting data for userGroup {} was not possible: {}", groupId, e.getMessage());
     }
-
-
   }
 
 
-  public void createUserGroupTable(UserGroup u) {
+  public boolean createExpenseTable(UserGroup u) {
     try {
       if (connector.getConnectionStatus()) {
         this.stmt = connector.getConnection().createStatement();
@@ -107,12 +109,14 @@ public class SQLiteHandlerAssistant {
         this.stmt.executeUpdate(create);
         fillUpColumns(u);
 //        tableCreated = true;
+        return true;
       } else {
         log.error("No connection to database found - creating table is not possible");
       }
     } catch (SQLException sqlException) {
       log.error("An error occurred: {}", sqlException.getMessage());
     }
+    return false;
   }
 
   private void fillUpColumns(UserGroup u) throws SQLException {
@@ -124,4 +128,99 @@ public class SQLiteHandlerAssistant {
     }
   }
 
+  public void addUserGroupToDatabase(UserGroup userGroup) {
+    try {
+      if (connector.getConnectionStatus()) {
+        if (!checkTableExists("userGroups")) {
+          createTable();
+        }
+//        this.stmt = connector.getConnection().createStatement();
+//        String inputUserGroup =
+//            "insert into userGroups (ID,MEMBER) values ('" + userGroup.groupId + "', '"
+//                + userGroup.groupMember + "')";
+//        log.debug("Input String: {}", inputUserGroup);
+//        this.stmt.executeQuery(inputUserGroup);
+        String inputUserGroup = "insert into userGroups (ID, MEMBER) values (?, ?)";
+        PreparedStatement preparedStatement = connector.getConnection().prepareStatement(inputUserGroup);
+        preparedStatement.setString(1, userGroup.groupId);
+        preparedStatement.setObject(2, userGroup.groupMember);
+
+        preparedStatement.executeUpdate();
+      }
+    } catch (SQLException e) {
+      log.error("Creating table for userGroup is not possible: {}", e.getMessage());
+    }
+  }
+
+
+  private void createTable() {
+    if (connector.getConnectionStatus() && !checkTableExists("userGroups")) {
+      try  {
+        String input = "create table userGroups (ID TEXT PRIMARY KEY NOT NULL, MEMBER TEXT)";
+        try {
+          if(connector.getConnectionStatus()) {
+            PreparedStatement preparedStatement = connector.getConnection().prepareStatement(input);
+            preparedStatement.executeUpdate();
+            this.tableCreated = true;
+          }
+        } catch (SQLException e) {
+          log.error("Table creation not possible: {}", e.getMessage());
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  String query = "CREATE TABLE userGroups (ID TEXT PRIMARY KEY NOT NULL, MEMBER TEXT)";
+
+
+
+  public boolean checkTableExists(String tableName) {
+    boolean tableExists = false;
+    try {
+      DatabaseMetaData metaData = connector.getConnection().getMetaData();
+      ResultSet tables = metaData.getTables(null, null, tableName, null);
+
+      while (tables.next()) {
+        String table = tables.getString("TABLE_NAME");
+        if (table.equalsIgnoreCase(tableName)) {
+          tableExists = true;
+          break;
+        }
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+
+    return tableExists;
+  }
+
+  public List<String> getMemberListForId(String id) {
+    List<String> memberList = null;
+
+    String getMember = "SELECT MEMBER FROM userGroups WHERE ID = ?";
+
+    try (PreparedStatement preparedStatement = connector.getConnection().prepareStatement(getMember)) {
+
+      preparedStatement.setString(1, id);
+      ResultSet resultSet = preparedStatement.executeQuery();
+      String member = null;
+      while (resultSet.next()) {
+        member = resultSet.getString("MEMBER");
+//        memberList.add(member);
+      }
+      assert member != null;
+      member = member.replace("[", "");
+      member = member.replace("]", "");
+      member = member.replace(" ", "");
+      memberList = new ArrayList<String>(Arrays.asList(member.split(",")));
+
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+
+    return memberList;
+  }
 }
+

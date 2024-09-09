@@ -48,8 +48,9 @@ class SplittingTest {
     List<String> p = Arrays.asList("P", "N", "U", "S");
     final int SHORT_ID_LENGTH = 8;
     String shortId = RandomStringUtils.randomAlphanumeric(SHORT_ID_LENGTH);
-    userHandling.setupUserGroup(shortId, p);
-    this.splittingManager.generateParticipantGroup(p);
+    this.splittingManager.setupUserGroup(shortId, p);
+    log.info("used id is_ {}", shortId);
+//    this.splittingManager.generateParticipantGroup(p);
     this.splittingManager.trackExpense(shortId, "U", "title1", IncludedMembers.ALL, 20.00);
     this.splittingManager.trackExpense(shortId, "P", "title2", IncludedMembers.ALL, 24.00);
     this.splittingManager.trackExpense(shortId, "N", "title3", IncludedMembers.ALL, 16.00);

@@ -27,7 +27,7 @@ public class SumUp {
 
   public void sum(String groupId) throws SQLException {
     if (!this.sqLiteConnector.getConnectionStatus()) {
-      return;
+      sqLiteConnector.startConnection("db.db");
     }
     Statement stmt = this.sqLiteConnector.getConnection().createStatement();
 
